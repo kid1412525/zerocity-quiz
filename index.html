@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zero City ルールテスト</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--text:#1d2330;--sub:#667085;--ok:#1a9e5c;--ng:#d6382f;--accent:#2f5bea;--line:#e3e6ec}
+@media (prefers-color-scheme:dark){:root{--bg:#12151c;--card:#1b2029;--text:#eef0f4;--sub:#9aa3b2;--line:#2b3240}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Yu Gothic UI","Meiryo",sans-serif;line-height:1.7}
+main{max-width:640px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.4rem;margin:8px 0 4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:16px}
+.sub{color:var(--sub);font-size:.9rem}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.cat{display:inline-block;font-size:.75rem;background:var(--accent);color:#fff;border-radius:99px;padding:1px 10px}
+.q{font-size:1.15rem;font-weight:700;margin:12px 0 18px}
+.btns{display:flex;gap:12px}
+.btns button{flex:1;font-size:2.4rem;padding:12px 0;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
+.btns button.sel{border-color:var(--accent);background:rgba(47,91,234,.15)}
+.card.ok{border-color:var(--ok)}
+.card.ng{border-color:var(--ng)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{border:2px solid var(--line);background:var(--card);color:var(--text);border-radius:99px;padding:6px 14px;font-size:.9rem;cursor:pointer}
+.chip.on{border-color:var(--accent);background:rgba(47,91,234,.15)}
+.btns button:disabled{opacity:.4}
+.start:disabled{opacity:.45;cursor:not-allowed}
+.btns button.cnt{font-size:1.3rem;padding:18px 0}
+.btns button:hover:not(:disabled){border-color:var(--accent)}
+.btns button:disabled{cursor:default;opacity:.55}
+.btns button.pick{opacity:1}
+.res{margin-top:16px;padding:12px 14px;border-radius:10px;display:none}
+.res.ok{background:rgba(26,158,92,.13);border-left:4px solid var(--ok)}
+.res.ng{background:rgba(214,56,47,.13);border-left:4px solid var(--ng)}
+.res b{display:block;font-size:1.05rem}
+.next,.start{margin-top:14px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-size:1rem;cursor:pointer}
+.score{font-size:2.6rem;font-weight:800;text-align:center}
+.rev{border-top:1px solid var(--line);padding:10px 0;font-size:.92rem}
+.rev:first-child{border-top:0}
+</style>
+</head>
+<body>
+<main>
+<h1>Zero City ルールテスト 〇×</h1>
+<div class="sub" id="head"></div>
+<div class="bar"><i id="bar"></i></div>
+<div id="app"></div>
+</main>
+<script>
+// グループ = 同じ事実を別の聞き方で出す。1回のテストでは各グループから1つだけ出題。
+// [カテゴリ, 解説, [[問題文, 正解], ...]]
+const G=[
+["人数・ヘリ","小型は5人(コンビニのみ3人)。",[["小型犯罪の対応可能人数は、コンビニでも他の場所でも5人である。",false],["コンビニ犯罪の対応可能人数は3人である。",true],["小型犯罪(コンビニ以外)の対応可能人数は3人である。",false]]],
+["人数・ヘリ","特殊小型は5人・ヘリ1台。",[["特殊小型犯罪は、対応人数5人・ヘリ1台である。",true],["特殊小型犯罪は、中型と同じ8人まで対応できる。",false],["特殊小型犯罪のヘリは2台まで出せる。",false]]],
+["人数・ヘリ","中型は8人・ヘリ2台(ヘリ3台は大型)。",[["中型犯罪のヘリは3台まで出せる。",false],["中型犯罪は、対応人数8人・ヘリ2台である。",true],["中型犯罪の対応可能人数は10人である。",false]]],
+["人数・ヘリ","大型は12人・ヘリ3台。ヘリは対応人数内に収める必要があります。",[["大型犯罪は、地上12人に加えてヘリ3台分も別枠で出動できる。",false],["大型犯罪は、対応人数12人・ヘリ3台で、ヘリも人数内に収める。",true],["大型犯罪の対応可能人数は15人である。",false]]],
+["人数・ヘリ","ブースティングA帯・S帯は6人・ヘリ2台。",[["ブースティングA帯・S帯の対応人数は5人である。",false],["ブースティングA帯・S帯は、6人・ヘリ2台である。",true],["ブースティングA帯・S帯のヘリは1台である。",false]]],
+["人数・ヘリ","超大型は人数・ヘリともに無制限。",[["超大型犯罪の対応人数・ヘリ台数は無制限である。",true],["超大型犯罪の対応人数は、最大20人である。",false]]],
+["銃の使用","銃を使えるのは、命の危険/犯人が銃を使用/上官の許可/中型以上の犯罪、の場合のみ。むやみな発砲は禁止。",[["犯人が銃を使用した場合は、発砲できる。",true],["上官の許可があれば、小型犯罪でも発砲できる。",true]]],
+["銃の使用","即発砲許可は『中型以上』です(特殊小型は含まれない)。",[["中型以上の犯罪は、即発砲が許可されている。",true]]],
+["職務質問","順番は ①理由を説明 → ②必要に応じて所持品検査。理由なく検査は禁止。",[["職務質問では、所持品検査を先に行い、その後に理由を説明する。",false],["職務質問では、所持品検査を必ず行う。",false],["理由なく所持品検査を行うことは禁止されている。",true],["職務質問では、最初に理由を説明する。",true]]],
+["事件対応","再起動『15分前』。",[["再起動30分前を過ぎても、地上のPDに視認されていれば強制逮捕となる。",false],["再起動15分前を過ぎても、地上のPDに視認されていれば強制逮捕となる。",true]]],
+["事件対応","クラッシュしたPDは復帰禁止。本署湧きして本署で待機し、別事件の対応をします。",[["事件対応中にクラッシュしたPDは、再起動後すぐ同じ事件に復帰してよい。",false],["事件対応中にクラッシュしたPDは、本署で待機し、別事件の対応をする。",true]]],
+["事件対応","ダウンしたPDは、収束のアナウンスがあるまで現場に戻れない。",[["事件対応中にダウンしたPDは、状況を見て再介入してよい。",false],["事件対応中にダウンしたPDは、収束のアナウンスがあるまで現場に戻れない。",true]]],
+["事件対応","確死時の口頭での情報共有は禁止。ただし緊急ピン等は例外。",[["確死が入った場合、緊急ピンでの情報共有も禁止である。",false],["確死が入った場合、口頭での情報共有は禁止だが、緊急ピン等は例外である。",true],["確死が入った場合は、口頭で情報共有してよい。",false]]],
+["事件対応","確死が入った後は、/911での情報共有は禁止。",[["事件対応中に確死が入った後でも、/911での情報共有は許可されている。",false],["事件対応中に確死が入った後は、/911での情報共有が禁止されている。",true]]],
+["事件対応","人質がいる場合は人質の命を優先し、犯人から解放条件を聞く。",[["人質がいる場合は、犯人の要求を聞かず制圧を優先する。",false],["人質がいる場合は、人質の命を優先し、犯人の解放条件を聞く。",true]]],
+["汚職行為","確認が取れれば『無警告』で『20億』を請求。",[["汚職が確認された場合、まず警告をしたうえで請求される。",false],["汚職が確認された場合、無警告で20億を請求される。",true],["汚職の請求額は2億である。",false]]],
+["汚職行為","請求は『7日以内』に払われない場合、永BAN。",[["汚職の請求を14日以内に払わなければ、永BANとなる。",false],["汚職の請求を7日以内に払わなければ、永BANとなる。",true]]],
+["汚職行為","車両の譲渡・転送はどちらも汚職。",[["PD車両の『転送』は、『譲渡』と違い汚職にあたらない。",false],["PD車両を市民に譲渡・転送する行為は、汚職にあたる。",true]]],
+["汚職行為","退勤後のPD備品・車両の使用は汚職。",[["退勤後にPD備品・車両を使用する行為は、汚職にあたらない。",false],["退勤後にPD備品・車両を使用する行為は、汚職にあたる。",true]]],
+["汚職行為","犯罪の情報・PD内部の情報の漏洩は汚職。黒市民の犯罪を手伝うのも汚職。",[["犯罪の情報を外部に漏らす行為は、汚職にあたる。",true],["黒市民の犯罪を手伝う行為は、汚職にあたらない。",false]]],
+["収束・撤退・全滅","収束通知が不要なのは『小型』のみ。特殊小型は必要。",[["小型犯罪も特殊小型犯罪も、収束通知は不要である。",false],["小型犯罪では、収束通知をあげなくてもよい。",true],["特殊小型犯罪では、収束通知が必要である。",true]]],
+["収束・撤退・全滅","小型は撤退・全滅の通知も不要。",[["小型犯罪では、撤退通知・全滅通知も不要である。",true],["小型犯罪でも、全滅通知は必ず必要である。",false]]],
+["収束・撤退・全滅","一定時間(現場判断)経過でロスト判定。",[["犯罪者を見失ったら、時間に関係なく直ちにロスト判定とする。",false],["犯罪者を見失って一定時間(現場判断)経過したら、ロスト判定とする。",true]]],
+["収束・撤退・全滅","撤退は『地上で動ける者がいなくなった場合』、または中型以上で現場に行けない場合。",[["地上で動ける者が1人でも減ったら、撤退通知を出してよい。",false],["地上で動ける者がいなくなった場合、撤退通知を出して収束してよい。",true],["中型以上の犯罪で現場に行けない場合も、撤退通知で収束してよい。",true]]],
+["収束・撤退・全滅","全滅の場合は『全滅通知』。",[["現場のPDが全滅した場合は、撤退通知を出して収束とする。",false],["現場のPDが全滅した場合は、全滅通知を出して収束とする。",true]]],
+["護送","犯人とPDは『別々』にピック。",[["護送する際は、犯人とPDを同時にまとめてピックする。",false],["護送する際は、犯人とPDを別々にピック(エスコート)する。",true]]],
+["護送","『カギ付き』敷地内に護送すれば完了。",[["警察署の敷地なら、鍵の有無に関係なく護送完了となる。",false],["警察署のカギ付き敷地内に護送すれば、護送完了となる。",true]]],
+["EMS通知","島取りでは、収束・撤退・全滅までEMS通知(リスポーンも)禁止。",[["島取り:犯罪対応中にダウンしても、収束前にEMS通知を出してよい。",false],["島取り:犯罪対応中にダウン・確死した場合、収束・撤退・全滅までEMS通知を出せない。",true]]],
+["EMS通知","客船強盗は、EMSの出勤人数に関係なく/tplegion可能。",[["客船強盗では、EMSの出勤人数によって/tplegionの可否が変わる。",false],["客船強盗では、EMSの出勤人数に関係なく/tplegionが可能である。",true]]],
+["指名手配","小型・特殊小型は15分。",[["特殊小型犯罪の指名手配は30分である。",false],["特殊小型犯罪の指名手配は15分である。",true],["小型犯罪の指名手配は30分である。",false]]],
+["指名手配","中型は30分、大型は45分、超大型は60分。",[["中型犯罪の指名手配は45分である。",false],["中型犯罪の指名手配は30分である。",true],["大型犯罪の指名手配は60分である。",false],["大型犯罪の指名手配は45分である。",true]]],
+["指名手配","車のナンバーや血痕等の証拠がある場合のみ。",[["犯人の姿を見ていれば、証拠がなくても指名手配をかけられる。",false],["指名手配は、証拠がある場合のみかけられる。",true]]],
+["指名手配","PD全滅後は、参加したPD『以外』が証拠を元にかけられる。",[["PD全滅後は、その犯罪に参加したPDだけが指名手配をかけられる。",false],["PD全滅後は、参加していないPDなら証拠がある場合に指名手配をかけられる。",true]]],
+["張り込み","薬物精製所・採取所・販売場所は対象外。ギャングアジト等は禁止。",[["薬物販売場所への張り込みは禁止されている。",false],["薬物販売場所への張り込みは、禁止の対象外である。",true],["ギャングアジトへの張り込みは禁止されている。",true]]],
+["薬物","薬物販売の現認時は無警告でプレイヤー殺害可能。",[["薬物販売を現認した場合、警告してからでないと殺害できない。",false],["薬物販売を現認した場合、無警告でプレイヤー殺害が可能である。",true]]],
+["個人医","介入してきた個人医へは無警告発砲許可。",[["犯罪現場に介入してきた個人医へは、警告後に発砲する。",false],["犯罪現場に介入してきた個人医へは、無警告で発砲してよい。",true]]],
+["個人医","ピックの動線上でPDをP殺した場合は適用外(投降なし)。",[["個人医がピックの動線上でPDをP殺した場合も、手を挙げて投降する。",false],["個人医がピックの動線上でPDをP殺した場合は、投降のルールは適用外である。",true]]],
+["インパウンド","犯罪現場での車両インパウンドの費用は一律10万円です(例外:違法駐車は30万円、全滅時は0円)。",[["犯罪現場での車両インパウンドの費用は、犯罪の規模によって変わる。",false],["犯罪現場での車両インパウンドの費用は、一律10万円である。",true]]],
+["インパウンド","違法駐車は費用30万円・インパウンド時間60分。",[["違法駐車の車両インパウンドは、費用10万円・時間30分である。",false],["違法駐車の車両インパウンドは、費用30万円・時間60分である。",true]]],
+["インパウンド","全滅時は費用0円・インパウンド時間0分の街インパウンド。",[["全滅後に現場に誰も残っていない場合は、費用10万円で街インパウンドする。",false],["全滅後に現場に誰も残っていない場合は、費用0円・時間0分で街インパウンドする。",true]]],
+["インパウンド","中型45分、大型・超大型60分。",[["中型犯罪のインパウンド時間は60分である。",false],["中型犯罪のインパウンド時間は45分である。",true],["大型犯罪のインパウンド時間は45分である。",false],["大型・超大型犯罪のインパウンド時間は60分である。",true]]],
+["インパウンド","小型・特殊小型は30分。",[["小型犯罪のインパウンド時間は45分である。",false],["小型犯罪と特殊小型犯罪のインパウンド時間は、どちらも30分である。",true]]],
+["保釈金","プリズンへ送られる『前』にPDへ申告。",[["保釈金の申告は、プリズンに送られた後でも可能である。",false],["保釈金の申告は、プリズンへ送られる前にPDへ行う。",true]]],
+["保釈金","中型1000万円、大型2000万円、超大型4000万円。",[["中型犯罪の保釈金は2000万円である。",false],["中型犯罪の保釈金は1000万円である。",true],["大型犯罪の保釈金は2000万円である。",true],["超大型犯罪の保釈金は5000万円である。",false]]],
+["保釈金","ブースティングA帯・S帯は700万円、小型・特殊小型は500万円、逃走幇助は300万円。",[["ブースティングA帯・S帯の保釈金は500万円である。",false],["ブースティングA帯・S帯の保釈金は700万円である。",true],["逃走幇助の保釈金は500万円である。",false],["小型犯罪の保釈金は500万円である。",true]]],
+["保釈金","保釈金は罰金とは別に支払う。",[["保釈金は、罰金に含まれるため別途支払う必要はない。",false],["保釈金は、罰金とは別に支払う。",true]]],
+["保釈金","請求を切った上で手錠をかけ、エスコートして警察署の外で解放。",[["保釈金を払う申告があった場合は、手錠をかけずに署内で解放する。",false],["保釈金を払う申告があった場合は、請求後、手錠をかけて警察署の外で解放する。",true]]],
+["保釈金","記載の犯罪以外の単発犯罪は、保釈金制度の該当外。",[["どの単発犯罪でも、保釈金制度を利用できる。",false],["記載のない単発犯罪は、保釈金制度の該当外である。",true]]],
+["押収対象","『押収物』表記が基本。犯罪利用禁止の物以外は押収対象。例外もある。",[["犯罪に利用した武器は、例外なく全て押収対象である。",false],["アイテムに『押収物』と記載があれば、基本的に押収対象である。",true]]],
+["基本ルール","職務中は警察装備・警察車両『のみ』。",[["職務中、警察装備を使えば、EVCのついていない車両でもよい。",false],["職務中は、警察装備・警察車両のみを使用する。",true]]],
+["基本ルール","PD退勤後は、必ず私服に着替える。",[["PD退勤後は、PD服装のままでもよい。",false],["PD退勤後は、必ずPD服装から私服に着替える。",true]]],
+["基本ルール","個人的な理由での逮捕・取り締まりは、どちらも禁止。",[["個人的な理由での逮捕は禁止だが、取り締まりは許される。",false],["個人的な理由での逮捕・取り締まりは、どちらも禁止である。",true]]],
+["トラブル対応","独断行動は禁止。必ず上官へ報告し、指示に従う。",[["トラブルは、まず自分で対処し、解決後に上官へ報告する。",false],["トラブルが起きた際は、独断で動かず、上官へ報告して指示に従う。",true]]]
+];
+
+const app=document.getElementById('app'),head=document.getElementById('head'),bar=document.getElementById('bar');
+let list,ans,graded;
+const shuffle=a=>{a=[...a];for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a};
+
+const CATS=[...new Set(G.map(g=>g[0]))];
+let selCats=new Set(CATS);
+function pool(){return G.filter(g=>selCats.has(g[0]))}
+function home(){
+  head.textContent="問題数を選んでスタート";bar.style.width="0";
+  const p=pool().length;
+  app.innerHTML='<div class="card"><p>Zero City のPDルールの理解度チェックです。全問に答えてから「答え合わせ」を押すと結果が出ます。</p>'+
+  '<div class="sub" style="margin-top:14px">問題数(全'+p+'問)</div>'+
+  '<div class="btns" style="margin-top:6px">'+[15,20,25].map(n=>'<button class="cnt" data-n="'+n+'"'+(p?'':' disabled')+'>'+(n>p&&p?p+'問':n+'問')+'</button>').join('')+
+  '<button class="cnt" data-n="0"'+(p?'':' disabled')+'>全問</button></div></div>';
+  app.querySelectorAll('.cnt').forEach(b=>b.onclick=()=>start(+b.dataset.n));
+}
+function start(n){
+  const pl=pool();if(!pl.length)return;
+  if(!n||n>pl.length)n=pl.length;
+  list=shuffle(pl).slice(0,n).map(([c,e,v])=>{const p=v[Math.floor(Math.random()*v.length)];return [c,p[0],p[1],e]});
+  ans=new Array(n).fill(null);graded=false;render();window.scrollTo(0,0);
+}
+function render(){
+  const done=ans.filter(v=>v!==null).length;
+  head.textContent=graded?"結果":"回答済み "+done+" / "+list.length;
+  bar.style.width=(done/list.length*100)+"%";
+  let h='';
+  list.forEach((q,k)=>{
+    const a=ans[k];let cls='';
+    if(graded)cls=a===q[2]?' ok':' ng';
+    h+='<div class="card'+cls+'"><span class="cat">'+q[0]+'</span><div class="q">'+(k+1)+'. '+q[1]+'</div>'+
+    '<div class="btns"><button data-k="'+k+'" data-v="1" class="'+(a===true?'sel':'')+'"'+(graded?' disabled':'')+'>〇</button>'+
+    '<button data-k="'+k+'" data-v="0" class="'+(a===false?'sel':'')+'"'+(graded?' disabled':'')+'>×</button></div>';
+    if(graded)h+='<div class="res '+(a===q[2]?'ok':'ng')+'" style="display:block"><b>'+
+      (a===null?'未回答 / 正解は '+(q[2]?'〇':'×'):a===q[2]?'〇 正解!':'× 不正解… 正解は '+(q[2]?'〇':'×'))+'</b>'+q[3]+'</div>';
+    h+='</div>';
+  });
+  if(!graded){
+    h+='<button class="start" id="g"'+(done<list.length?' disabled':'')+'>答え合わせ'+(done<list.length?'(あと'+(list.length-done)+'問)':'')+'</button>';
+  }else{
+    const sc=list.filter((q,k)=>ans[k]===q[2]).length,pct=Math.round(sc/list.length*100);
+    h='<div class="card"><div class="score">'+sc+' / '+list.length+'<div class="sub">'+pct+'点'+(pct==100?' 🎉 完璧!':pct>=80?' 合格ライン':' もう一度復習しましょう')+'</div></div>'+
+      '<button class="start" id="re">同じ問題数でもう一度</button><button class="start" id="hm" style="background:var(--sub)">問題数を選び直す</button></div>'+h;
+  }
+  app.innerHTML=h;
+  app.querySelectorAll('.btns button[data-k]').forEach(b=>b.onclick=()=>{
+    const y=window.scrollY;ans[+b.dataset.k]=b.dataset.v==='1';render();window.scrollTo(0,y);
+  });
+  const g=document.getElementById('g');if(g)g.onclick=()=>{graded=true;render();window.scrollTo(0,0)};
+  const re=document.getElementById('re');if(re)re.onclick=()=>start(list.length);
+  const hm=document.getElementById('hm');if(hm)hm.onclick=home;
+}
+home();
+</script>
+</body>
+</html>
