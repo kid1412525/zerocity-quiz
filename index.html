@@ -135,7 +135,7 @@ function home(){
   app.querySelectorAll('.cnt').forEach(b=>b.onclick=()=>start(+b.dataset.n));
 }
 function start(n){
-  let pl=pool();if(n===15)pl=pl.filter(g=>!/ブースティング|特殊小型/.test(g[2].map(v=>v[0]).join('')));if(!pl.length)return;
+  let pl=pool();if(n===15)pl=pl.filter(g=>!/ブースティング|特殊小型|島取り/.test(g[0]+g[2].map(v=>v[0]).join('')));if(!pl.length)return;
   if(!n||n>pl.length)n=pl.length;
   list=shuffle(pl).slice(0,n).map(([c,e,v])=>{const p=v[Math.floor(Math.random()*v.length)];return [c,p[0],p[1],e]});
   ans=new Array(n).fill(null);graded=false;render();window.scrollTo(0,0);
