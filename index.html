@@ -125,18 +125,31 @@ const shuffle=a=>{a=[...a];for(let k=a.length-1;k>0;k--){const j=Math.floor(Math
 const CATS=[...new Set(G.map(g=>g[0]))];
 let selCats=new Set(CATS);
 function pool(){return G.filter(g=>selCats.has(g[0]))}
+const ISL=g=>g[0]==='島取りダウン'||g[0]==='EMS・蘇生';
+let incl=true,lastN=0;
 function home(){
   head.textContent="問題数を選んでスタート";bar.style.width="0";
-  const p=pool().length;
+  const all=pool().length,noIsl=pool().filter(g=>!ISL(g)).length,isl=pool().filter(ISL).length;
   app.innerHTML='<div class="card"><p>Zero City のPDルールの理解度チェックです。全問に答えてから「答え合わせ」を押すと結果が出ます。</p>'+
-  '<div class="sub" style="margin-top:14px">問題数(全'+p+'問)</div>'+
-  '<div class="btns" style="margin-top:6px">'+[15,20,25].map(n=>'<button class="cnt" data-n="'+n+'"'+(p?'':' disabled')+'>'+(n>p&&p?p+'問':n+'問')+'</button>').join('')+
-  '<button class="cnt" data-n="0"'+(p?'':' disabled')+'>全問</button></div></div>';
+  '<div class="sub" style="margin-top:14px">20問・25問・全問のとき、島取りの問題を</div>'+
+  '<div class="chips"><button class="chip'+(incl?' on':'')+'" data-i="1">含む</button><button class="chip'+(incl?'':' on')+'" data-i="0">含まない</button></div>'+
+  '<div class="sub" style="margin-top:14px">問題数(全'+(incl?all:noIsl)+'問)</div>'+
+  '<div class="btns" style="margin-top:6px">'+[15,20,25].map(n=>'<button class="cnt" data-n="'+n+'">'+n+'問</button>').join('')+
+  '<button class="cnt" data-n="0">全問</button></div>'+
+  '<div class="sub" style="margin-top:14px">島取りだけ</div>'+
+  '<div class="btns" style="margin-top:6px"><button class="cnt" data-n="-1">島取り用('+isl+'問)</button></div>'+
+  '<div class="sub" style="margin-top:10px">15問は、島取りの問題を含みません。</div></div>';
+  app.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{incl=b.dataset.i==='1';home()});
   app.querySelectorAll('.cnt').forEach(b=>b.onclick=()=>start(+b.dataset.n));
 }
 function start(n){
-  let pl=pool();if(n===15)pl=pl.filter(g=>!/ブースティング|特殊小型|島取り/.test(g[0]+g[2].map(v=>v[0]).join('')));if(!pl.length)return;
-  if(!n||n>pl.length)n=pl.length;
+  lastN=n;
+  let pl=pool();
+  if(n===-1)pl=pl.filter(ISL);
+  else if(n===15)pl=pl.filter(g=>!/ブースティング|特殊小型|島取り/.test(g[0]+g[2].map(v=>v[0]).join('')));
+  else if(!incl)pl=pl.filter(g=>!ISL(g));
+  if(!pl.length)return;
+  if(n<=0||n>pl.length)n=pl.length;
   list=shuffle(pl).slice(0,n).map(([c,e,v])=>{const p=v[Math.floor(Math.random()*v.length)];return [c,p[0],p[1],e]});
   ans=new Array(n).fill(null);graded=false;render();window.scrollTo(0,0);
 }
@@ -167,7 +180,7 @@ function render(){
     const y=window.scrollY;ans[+b.dataset.k]=b.dataset.v==='1';render();window.scrollTo(0,y);
   });
   const g=document.getElementById('g');if(g)g.onclick=()=>{graded=true;render();window.scrollTo(0,0)};
-  const re=document.getElementById('re');if(re)re.onclick=()=>start(list.length);
+  const re=document.getElementById('re');if(re)re.onclick=()=>start(lastN);
   const hm=document.getElementById('hm');if(hm)hm.onclick=home;
 }
 home();
