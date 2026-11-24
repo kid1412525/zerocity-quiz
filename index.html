@@ -126,7 +126,7 @@ const CATS=[...new Set(G.map(g=>g[0]))];
 let selCats=new Set(CATS);
 function pool(){return G.filter(g=>selCats.has(g[0]))}
 const ISL=g=>g[0]==='島取りダウン'||g[0]==='EMS・蘇生';
-let incl=true,lastN=0;
+let incl=false,lastN=0;
 function home(){
   head.textContent="問題数を選んでスタート";bar.style.width="0";
   const all=pool().length,noIsl=pool().filter(g=>!ISL(g)).length,isl=pool().filter(ISL).length;
