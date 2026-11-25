@@ -26,6 +26,14 @@ h1{font-size:1.4rem;margin:8px 0 4px}
 .chip{border:2px solid var(--line);background:var(--card);color:var(--text);border-radius:99px;padding:6px 14px;font-size:.9rem;cursor:pointer}
 .chip.on{border-color:var(--accent);background:rgba(47,91,234,.15)}
 .btns button:disabled{opacity:.4}
+.card.perfect{border:2px solid #e0a800;background:linear-gradient(160deg,rgba(224,168,0,.18),var(--card) 70%);text-align:center}
+.big100{font-size:5rem;font-weight:800;line-height:1.1;color:#c98f00;letter-spacing:.02em;animation:pop .6s ease-out}
+.big100 span{font-size:1.6rem;margin-left:6px}
+.pmsg{font-size:1.2rem;font-weight:700;margin:4px 0 6px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.big100{animation:none}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .big100{color:#f2c230}}
+:root[data-theme="dark"] .big100{color:#f2c230}
 .start:disabled{opacity:.45;cursor:not-allowed}
 .btns button.cnt{font-size:1.3rem;padding:18px 0}
 .btns button:hover:not(:disabled){border-color:var(--accent)}
@@ -172,7 +180,7 @@ function render(){
     h+='<button class="start" id="g"'+(done<list.length?' disabled':'')+'>答え合わせ'+(done<list.length?'(あと'+(list.length-done)+'問)':'')+'</button>';
   }else{
     const sc=list.filter((q,k)=>ans[k]===q[2]).length,pct=Math.round(sc/list.length*100);
-    h='<div class="card"><div class="score">'+sc+' / '+list.length+'<div class="sub">'+pct+'点'+(pct==100?' 🎉 完璧!':pct>=80?' 合格ライン':' もう一度復習しましょう')+'</div></div>'+
+    h='<div class="card'+(pct==100?' perfect':'')+'">'+(pct==100?'<div class="big100">100<span>点</span></div><div class="pmsg">全問正解!完璧です</div><div class="sub" style="text-align:center">'+sc+' / '+list.length+'問 正解</div>':'<div class="score">'+sc+' / '+list.length+'<div class="sub">'+pct+'点'+(pct>=80?' 合格ライン':' もう一度復習しましょう')+'</div></div>')+
       '<button class="start" id="re">同じ問題数でもう一度</button><button class="start" id="hm" style="background:var(--sub)">問題数を選び直す</button></div>'+h;
   }
   app.innerHTML=h;
