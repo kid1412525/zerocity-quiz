@@ -34,6 +34,16 @@ h1{font-size:1.4rem;margin:8px 0 4px}
 @media (prefers-reduced-motion:reduce){.big100{animation:none}}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .big100{color:#f2c230}}
 :root[data-theme="dark"] .big100{color:#f2c230}
+.st summary{cursor:pointer;font-weight:700;font-size:1.05rem}
+.st ul{margin:10px 0 0;padding-left:1.2em}
+.st li{margin:4px 0}
+.tw{overflow-x:auto;margin-top:10px}
+.tbl{border-collapse:collapse;width:100%;font-size:.88rem;min-width:520px}
+.tbl th,.tbl td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+.tbl th{background:rgba(47,91,234,.12)}
+.tbl td:first-child{text-align:left;font-weight:700}
+.okc{color:var(--ok)}.ngc{color:var(--ng)}
+.ghost{background:transparent!important;color:var(--accent)!important;border:2px solid var(--accent)!important}
 .start:disabled{opacity:.45;cursor:not-allowed}
 .btns button.cnt{font-size:1.3rem;padding:18px 0}
 .btns button:hover:not(:disabled){border-color:var(--accent)}
@@ -88,6 +98,15 @@ const G=[
 ["収束・撤退・全滅","全滅の場合は『全滅通知』。",[["現場のPDが全滅した場合は、撤退通知を出して収束とする。",false],["現場のPDが全滅した場合は、全滅通知を出して収束とする。",true]]],
 ["護送","犯人とPDは『別々』にピック。",[["護送する際は、犯人とPDを同時にまとめてピックする。",false],["護送する際は、犯人とPDを別々にピック(エスコート)する。",true]]],
 ["護送","『カギ付き』敷地内に護送すれば完了。",[["警察署の敷地なら、鍵の有無に関係なく護送完了となる。",false],["警察署のカギ付き敷地内に護送すれば、護送完了となる。",true]]],
+["牢屋対応","牢屋に送る際は、犯人の空腹状態の確認と、刑期作業ができる場所(丸太があるところ)の説明をしてから送ります。",[["牢屋に送る際は、犯人の空腹状態の確認と、刑期作業ができる場所の説明をしてから送る。",true],["牢屋に送る際は、説明をせず、すぐに送ってよい。",false]]],
+["牢屋対応","牢屋対応の完了後、犯人の空腹状態を確認します。その後、/jail ID 時間 でプリズンに送ります。",[["牢屋対応の完了後に、まず犯人の空腹状態を確認する。",true],["犯人の空腹状態の確認は、/jailで送った後に行う。",false]]],
+["牢屋対応","プリズンに送るコマンドは「/jail ID 時間」です。",[["プリズンに送るコマンドは「/jail ID 時間」である。",true],["プリズンに送るコマンドは「/prison ID 時間」である。",false]]],
+["牢屋対応","刑期は、小型15分・中型30分・大型45分・超大型60分です。",[["小型犯罪の刑期は15分である。",true],["小型犯罪の刑期は30分である。",false]]],
+["牢屋対応","中型犯罪の刑期は30分です。",[["中型犯罪の刑期は30分である。",true],["中型犯罪の刑期は45分である。",false]]],
+["牢屋対応","大型犯罪の刑期は45分です。",[["大型犯罪の刑期は45分である。",true],["大型犯罪の刑期は60分である。",false]]],
+["牢屋対応","超大型犯罪の刑期は60分です。",[["超大型犯罪の刑期は60分である。",true],["超大型犯罪の刑期は45分である。",false]]],
+["牢屋対応","本署襲撃の刑期は60分です。",[["本署襲撃の刑期は60分である。",true],["本署襲撃の刑期は30分である。",false]]],
+["牢屋対応","小型〜超大型以外の犯罪の刑期は、罪状一覧で確認します。",[["小型〜超大型以外の犯罪の刑期は、罪状一覧で確認する。",true],["小型〜超大型以外の犯罪の刑期は、一律15分である。",false]]],
 ["EMS通知","客船強盗は、EMSの出勤人数に関係なく/tplegion可能。",[["客船強盗では、EMSの出勤人数によって/tplegionの可否が変わる。",false],["客船強盗では、EMSの出勤人数に関係なく/tplegionが可能である。",true]]],
 ["島取りダウン","島取り対応でダウンした場合、Hキー長押しでEMS湧きができるようになるまでの2分間は、ダウンしたまま待機します。",[["島取り対応でダウンした場合、Hキー長押しでEMS湧きができるまでの2分間は、ダウンしたまま待機する。",true],["島取り対応でダウンした場合、Hキー長押しでEMS湧きができるまでの待機時間は1分である。",false],["島取り対応でダウンしたら、待機せずにすぐHキー長押しでEMS湧きできる。",false]]],
 ["島取りダウン","待機の2分の間にROBされたら、その時点で/tplegionが可能です。",[["島取り対応でダウン後、2分の待機中にROBされた場合は、その時点で/tplegionが可能である。",true],["島取り対応でダウン後、ROBされても、2分経過するまで/tplegionはできない。",false]]],
@@ -147,7 +166,9 @@ function home(){
   '<button class="cnt" data-n="0">全問</button></div>'+
   '<div class="sub" style="margin-top:14px">島取りだけ</div>'+
   '<div class="btns" style="margin-top:6px"><button class="cnt" data-n="-1">島取り用('+isl+'問)</button></div>'+
-  '<div class="sub" style="margin-top:10px">15問は、島取りの問題を含みません。</div></div>';
+  '<div class="sub" style="margin-top:10px">15問は、島取りの問題を含みません。</div>'+
+  '<button class="start ghost" id="sb">要点まとめ</button></div>';
+  document.getElementById('sb').onclick=study;
   app.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{incl=b.dataset.i==='1';home()});
   app.querySelectorAll('.cnt').forEach(b=>b.onclick=()=>start(+b.dataset.n));
 }
@@ -217,6 +238,79 @@ function celebrate(){
   }
   requestAnimationFrame(frame);
 }
+const STUDY=`
+<div class="card"><div class="q" style="margin-top:0">要点まとめ</div>
+<div class="sub">最低限、これだけは覚えておきましょう。</div></div>
+
+<details class="card st" open><summary>対応人数・ヘリ台数</summary>
+<div class="tw"><table class="tbl" style="min-width:0"><thead><tr><th>犯罪</th><th>対応人数</th><th>ヘリ</th></tr></thead><tbody>
+<tr><td>ブースティングA・S帯</td><td>6人</td><td>2台</td></tr>
+<tr><td>小型</td><td>5人(コンビニのみ3人)</td><td>1台</td></tr>
+<tr><td>特殊小型</td><td>5人</td><td>1台</td></tr>
+<tr><td>中型</td><td>8人</td><td>2台</td></tr>
+<tr><td>大型</td><td>12人</td><td>3台</td></tr>
+<tr><td>超大型</td><td>無制限</td><td>無制限</td></tr>
+</tbody></table></div>
+<ul><li>ヘリは、犯罪対応人数の中に収める。</li></ul></details>
+
+<details class="card st"><summary>犯罪の規模ごとのまとめ</summary>
+<div class="tw"><table class="tbl"><thead><tr><th>規模</th><th>人数</th><th>ヘリ</th><th>指名手配</th><th>インパウンド</th><th>保釈金</th></tr></thead><tbody>
+<tr><td>ブースティングA・S帯</td><td>6人</td><td>2台</td><td>—</td><td>—</td><td>700万</td></tr>
+<tr><td>小型</td><td>5人<br><small>(コンビニ3人)</small></td><td>1台</td><td>15分</td><td>30分</td><td>500万</td></tr>
+<tr><td>特殊小型</td><td>5人</td><td>1台</td><td>15分</td><td>30分</td><td>500万</td></tr>
+<tr><td>中型</td><td>8人</td><td>2台</td><td>30分</td><td>45分</td><td>1000万</td></tr>
+<tr><td>大型</td><td>12人</td><td>3台</td><td>45分</td><td>60分</td><td>2000万</td></tr>
+<tr><td>超大型</td><td>無制限</td><td>無制限</td><td>60分</td><td>60分</td><td>4000万</td></tr>
+</tbody></table></div>
+<ul><li>逃走幇助の保釈金は300万円。</li><li>ヘリは犯罪対応人数の中に収める。</li><li>ブースティングの指名手配・インパウンド時間は、貼ってもらったルールに記載がありません。</li></ul></details>
+
+<details class="card st"><summary>銃の使用・事件対応</summary><ul>
+<li>銃を使えるのは「命の危険」「犯人が銃を使用」「上官の許可」「中型以上の犯罪(即発砲許可)」のとき。むやみに発砲は禁止。</li>
+<li>職務質問は ①理由を説明 → ②必要に応じて所持品検査(理由なく検査は禁止)。</li>
+<li>再起動15分前を過ぎても地上のPDに視認されていたら強制逮捕。</li>
+<li>クラッシュしたら復帰禁止。本署で待機し、別事件へ。</li>
+<li>ダウンしたら、収束のアナウンスがあるまで戻らない。</li>
+<li>確死が入ったら口頭の情報共有は禁止(緊急ピン等は例外)。事件対応中の/911での共有も禁止。</li>
+<li>人質がいたら、人質の命を優先して解放条件を聞く。</li>
+<li>シーン中は、各署の修理台は使用できない。</li></ul></details>
+
+<details class="card st"><summary>収束・撤退・全滅・護送</summary><ul>
+<li>収束通知は中型以上(特殊小型を含む)で必要。小型は不要(撤退・全滅の通知も不要)。</li>
+<li>ロスト:犯罪者を見失って一定時間(現場判断)で収束通知。</li>
+<li>撤退:地上で動ける者がいなくなったとき。中型以上で現場へ行けないときも可。</li>
+<li>全滅:全滅通知を出して収束。</li>
+<li>護送:犯人とPDを別々にピック。警察署のカギ付き敷地内で完了。</li></ul></details>
+
+<details class="card st"><summary>牢屋対応(プリズン)</summary><ul>
+<li>牢屋対応の完了後、犯人の空腹状態を確認する。</li>
+<li>「/jail ID 時間」でプリズンに送る。送る際に、刑務作業の説明をする。</li>
+<li>送る前に、空腹状態の確認と、刑期作業ができる場所の説明をする(「丸太があるところで心の目」で分かる)。</li></ul>
+<div class="tw"><table class="tbl" style="min-width:0"><thead><tr><th>犯罪</th><th>刑期</th></tr></thead><tbody>
+<tr><td>小型</td><td>15分</td></tr><tr><td>中型</td><td>30分</td></tr><tr><td>大型</td><td>45分</td></tr><tr><td>超大型</td><td>60分</td></tr><tr><td>本署襲撃</td><td>60分</td></tr>
+<tr><td>その他の犯罪</td><td>罪状一覧で確認</td></tr></tbody></table></div></details>
+
+<details class="card st"><summary>インパウンド・指名手配・保釈金</summary><ul>
+<li>犯罪現場のインパウンド費用は一律10万円。違法駐車は30万円・60分。全滅時は0円・0分。</li>
+<li>指名手配は車のナンバーや血痕などの証拠がある場合のみ。PD全滅後は、参加したPD以外が証拠をもとにかける。</li>
+<li>保釈金は罰金とは別。プリズンへ送られる前にPDへ申告。請求後、手錠をかけて警察署の外で解放。</li>
+<li>押収対象:武器と犯罪道具、アイテムに「押収物」と記載のあるもの。</li></ul></details>
+
+<details class="card st"><summary>犯罪シーン中の修理台</summary>
+<div class="grp"><b class="okc">使用できる</b><ul>
+<li>町中:海岸近く 7172 / アリーナ 9007 / バス営業所の前 8041 / 墓地ガレージ付近 7031 / 船着き 8241 / OVER REV(跡地) 8200 / N2Lab(跡地) 7326 / スーパー(跡地) 9110</li>
+<li>砂漠:砂漠飛行場 3037 / 北のガレージ 1012</li></ul></div>
+<div class="grp"><b class="ngc">使用禁止</b><ul>
+<li>セーフゾーン:ロスカス 7204 / アート 9035</li>
+<li>押収所:インパウンド(車) 9153 / インパウンド(航空) 10014</li>
+<li>警察関連:各警察署の駐車場など</li></ul></div></details>
+<button class="start" id="sb2">テストに戻る</button>
+`;
+function study(){
+  head.textContent="要点まとめ";bar.style.width="0";
+  app.innerHTML=STUDY;
+  document.getElementById('sb2').onclick=home;
+  window.scrollTo(0,0);
+}
 function render(){
   const done=ans.filter(v=>v!==null).length;
   head.textContent=graded?"結果":"回答済み "+done+" / "+list.length;
@@ -237,7 +331,7 @@ function render(){
   }else{
     const sc=list.filter((q,k)=>ans[k]===q[2]).length,pct=Math.round(sc/list.length*100);
     h='<div class="card'+(pct==100?' perfect':'')+'">'+(pct==100?'<div class="big100">100<span>点</span></div><div class="pmsg">全問正解!完璧です</div><div class="sub" style="text-align:center">'+sc+' / '+list.length+'問 正解</div>':'<div class="score">'+sc+' / '+list.length+'<div class="sub">'+pct+'点'+(pct>=80?' 合格ライン':' もう一度復習しましょう')+'</div></div>')+
-      '<button class="start" id="re">同じ問題数でもう一度</button><button class="start" id="hm" style="background:var(--sub)">問題数を選び直す</button></div>'+h;
+      '<button class="start" id="re">同じ問題数でもう一度</button><button class="start" id="hm" style="background:var(--sub)">問題数を選び直す</button><button class="start ghost" id="sb3">要点まとめ</button></div>'+h;
   }
   app.innerHTML=h;
   if(graded&&!fxDone&&list.every((q,k)=>ans[k]===q[2])){fxDone=true;celebrate()}
@@ -247,6 +341,7 @@ function render(){
   const g=document.getElementById('g');if(g)g.onclick=()=>{graded=true;render();window.scrollTo(0,0)};
   const re=document.getElementById('re');if(re)re.onclick=()=>start(lastN);
   const hm=document.getElementById('hm');if(hm)hm.onclick=home;
+  const sb3=document.getElementById('sb3');if(sb3)sb3.onclick=study;
 }
 home();
 </script>
