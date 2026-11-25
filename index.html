@@ -27,7 +27,7 @@ h1{font-size:1.4rem;margin:8px 0 4px}
 .chip.on{border-color:var(--accent);background:rgba(47,91,234,.15)}
 .btns button:disabled{opacity:.4}
 .card.perfect{border:2px solid #e0a800;background:linear-gradient(160deg,rgba(224,168,0,.18),var(--card) 70%);text-align:center}
-.big100{font-size:5rem;font-weight:800;line-height:1.1;color:#c98f00;letter-spacing:.02em;animation:pop .6s ease-out}
+.big100{text-shadow:0 0 18px rgba(242,194,48,.55);font-size:5rem;font-weight:800;line-height:1.1;color:#c98f00;letter-spacing:.02em;animation:pop .6s ease-out}
 .big100 span{font-size:1.6rem;margin-left:6px}
 .pmsg{font-size:1.2rem;font-weight:700;margin:4px 0 6px}
 @keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
@@ -159,7 +159,31 @@ function start(n){
   if(!pl.length)return;
   if(n<=0||n>pl.length)n=pl.length;
   list=shuffle(pl).slice(0,n).map(([c,e,v])=>{const p=v[Math.floor(Math.random()*v.length)];return [c,p[0],p[1],e]});
-  ans=new Array(n).fill(null);graded=false;render();window.scrollTo(0,0);
+  ans=new Array(n).fill(null);graded=false;fxDone=false;render();window.scrollTo(0,0);
+}
+let fxDone=false;
+function celebrate(){
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const c=document.createElement('canvas');
+  c.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:50';
+  document.body.appendChild(c);
+  const dpr=window.devicePixelRatio||1,W=c.width=Math.round(innerWidth*dpr),H=c.height=Math.round(innerHeight*dpr),x=c.getContext('2d');
+  const cols=['#f2c230','#ff5a5f','#3ddc97','#4db8ff','#c77dff','#ffffff'],P=[];
+  const burst=(cx,cy,n)=>{for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=(2+Math.random()*7)*dpr;P.push({t:'s',x:cx,y:cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,g:.12*dpr,s:(3+Math.random()*4)*dpr,c:cols[i%cols.length],l:1,d:.012+Math.random()*.01})}};
+  const confetti=n=>{for(let i=0;i<n;i++)P.push({t:'c',x:Math.random()*W,y:-20*dpr,vx:(Math.random()-.5)*3*dpr,vy:(2+Math.random()*4)*dpr,g:.03*dpr,s:(7+Math.random()*7)*dpr,c:cols[i%cols.length],l:1,d:.004,r:Math.random()*6,vr:(Math.random()-.5)*.3})};
+  const t0=performance.now();let last=-1000;
+  function frame(now){
+    const el=now-t0;
+    if(el<4000&&el-last>350){last=el;burst(W*(.2+Math.random()*.6),H*(.15+Math.random()*.35),50);confetti(14)}
+    x.clearRect(0,0,W,H);
+    for(const p of P){p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.l-=p.d;if(p.t==='c')p.r+=p.vr;
+      x.globalAlpha=Math.max(p.l,0);x.fillStyle=p.c;
+      if(p.t==='c'){x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);x.restore()}
+      else{x.beginPath();x.arc(p.x,p.y,p.s/2,0,7);x.fill()}}
+    for(let i=P.length-1;i>=0;i--)if(P[i].l<=0||P[i].y>H+40)P.splice(i,1);
+    if(el<4500||P.length)requestAnimationFrame(frame);else c.remove();
+  }
+  requestAnimationFrame(frame);
 }
 function render(){
   const done=ans.filter(v=>v!==null).length;
@@ -184,6 +208,7 @@ function render(){
       '<button class="start" id="re">同じ問題数でもう一度</button><button class="start" id="hm" style="background:var(--sub)">問題数を選び直す</button></div>'+h;
   }
   app.innerHTML=h;
+  if(graded&&!fxDone&&list.every((q,k)=>ans[k]===q[2])){fxDone=true;celebrate()}
   app.querySelectorAll('.btns button[data-k]').forEach(b=>b.onclick=()=>{
     const y=window.scrollY;ans[+b.dataset.k]=b.dataset.v==='1';render();window.scrollTo(0,y);
   });
